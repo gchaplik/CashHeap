@@ -2,6 +2,7 @@
 // Initialises the database schema and seeds demo data if the DB is empty.
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return;
+  if (process.env.NEXT_PHASE === 'phase-production-build') return;
 
   const { migrate, seedFromJson } = await import('./server/db/index.js');
   const { existsSync, readFileSync } = await import('node:fs');
