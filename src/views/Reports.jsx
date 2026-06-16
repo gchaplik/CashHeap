@@ -11,6 +11,7 @@ import { fetchUsdCad } from "../utils/fx.js";
 import { sumExpenses, sumIncome } from "../utils/spending.js";
 
 function Reports({txns,bills,billPayments,cats,catBudgets,goals,vacations,vacationTxns,settings}){
+  const nfmt=useNfmt();
   const [reportType,setReportType]=useState("monthly");
   const [year,setYear]=useState(()=>new Date().getFullYear());
   const [month,setMonth]=useState(()=>today().slice(0,7));
@@ -53,9 +54,8 @@ function Reports({txns,bills,billPayments,cats,catBudgets,goals,vacations,vacati
     // Build list of unique months in range
     const ms=new Set(allTxns.map(t=>t.date?.slice(0,7)).filter(Boolean));
     [...ms].filter(m=>m.startsWith(String(year))).sort().forEach(m=>{
-      const mt=allTxns.filter(t=>t.date?.startsWith(m));
-      const income=mt.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
-      const expenses=mt.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+      const income=sumIncome(txns,m);
+      const expenses=sumExpenses(txns,vacationTxns,m);
       const net=income-expenses;
       months.push([m,income.toFixed(2),expenses.toFixed(2),net.toFixed(2)]);
     });
@@ -155,13 +155,16 @@ function Reports({txns,bills,billPayments,cats,catBudgets,goals,vacations,vacati
 
   const printMonthlyReport=()=>{
     const mt=txns.filter(t=>t.date?.startsWith(month));
-    const inc=mt.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
-    const exp=mt.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+    const vmt=vacationTxns.filter(t=>t.date?.startsWith(month));
+    const inc=sumIncome(txns,month);
+    const exp=sumExpenses(txns,vacationTxns,month);
     const net=inc-exp;
     const catRows=cats.map(c=>({cat:c,amt:mt.filter(t=>t.type==="expense"&&t.category===c).reduce((s,t)=>s+t.amount,0),budget:catBudgets[c]||0})).filter(r=>r.amt>0);
+    const vacTotal=vmt.reduce((s,t)=>s+t.amount,0);
     const mo=new Date(month+"-02").toLocaleString("default",{month:"long",year:"numeric"});
-    const html=`<!DOCTYPE html><html><head><title>CashHeap — ${month}</title><style>body{font-family:system-ui,sans-serif;max-width:700px;margin:40px auto;color:#1e293b}h1{font-size:24px;font-weight:800;margin-bottom:4px}h2{font-size:16px;font-weight:700;margin:24px 0 8px}.cards{display:flex;gap:16px;margin-bottom:24px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;flex:1}.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:4px}.val{font-size:22px;font-weight:700}table{width:100%;border-collapse:collapse}th{font-size:11px;text-transform:uppercase;color:#64748b;text-align:left;padding:6px 8px;border-bottom:2px solid #e2e8f0}td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:13px}@media print{body{margin:20px}}</style></head><body><h1>CashHeap Report — ${mo}</h1><div class="cards"><div class="card"><div class="lbl">Income</div><div class="val" style="color:#059669">$${inc.toFixed(2)}</div></div><div class="card"><div class="lbl">Expenses</div><div class="val" style="color:#dc2626">$${exp.toFixed(2)}</div></div><div class="card"><div class="lbl">Net</div><div class="val" style="color:${net>=0?"#059669":"#dc2626"}">$${net.toFixed(2)}</div></div></div><h2>Spending by Category</h2><table><tr><th>Category</th><th style="text-align:right">Spent</th><th style="text-align:right">Budget</th><th style="text-align:right">Remaining</th></tr>${catRows.map(r=>`<tr><td>${r.cat}</td><td style="text-align:right;color:#dc2626">$${r.amt.toFixed(2)}</td><td style="text-align:right;color:#64748b">${r.budget>0?"$"+r.budget.toFixed(2):"—"}</td><td style="text-align:right;color:${r.budget>0&&r.budget-r.amt<0?"#dc2626":"#059669"}">${r.budget>0?"$"+(r.budget-r.amt).toFixed(2):"—"}</td></tr>`).join("")}</table></body></html>`;
+    const html=`<!DOCTYPE html><html><head><title>CashHeap — ${month}</title><style>body{font-family:system-ui,sans-serif;max-width:700px;margin:40px auto;color:#1e293b}h1{font-size:24px;font-weight:800;margin-bottom:4px}h2{font-size:16px;font-weight:700;margin:24px 0 8px}.cards{display:flex;gap:16px;margin-bottom:24px}.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;flex:1}.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:4px}.val{font-size:22px;font-weight:700}table{width:100%;border-collapse:collapse}th{font-size:11px;text-transform:uppercase;color:#64748b;text-align:left;padding:6px 8px;border-bottom:2px solid #e2e8f0}td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:13px}@media print{body{margin:20px}}</style></head><body><h1>CashHeap Report — ${mo}</h1><div class="cards"><div class="card"><div class="lbl">Income</div><div class="val" style="color:#059669">$${inc.toFixed(2)}</div></div><div class="card"><div class="lbl">Expenses</div><div class="val" style="color:#dc2626">$${exp.toFixed(2)}</div></div><div class="card"><div class="lbl">Net</div><div class="val" style="color:${net>=0?"#059669":"#dc2626"}">$${net.toFixed(2)}</div></div></div><h2>Spending by Category</h2><table><tr><th>Category</th><th style="text-align:right">Spent</th><th style="text-align:right">Budget</th><th style="text-align:right">Remaining</th></tr>${catRows.map(r=>`<tr><td>${r.cat}</td><td style="text-align:right;color:#dc2626">$${r.amt.toFixed(2)}</td><td style="text-align:right;color:#64748b">${r.budget>0?"$"+r.budget.toFixed(2):"—"}</td><td style="text-align:right;color:${r.budget>0&&r.budget-r.amt<0?"#dc2626":"#059669"}">${r.budget>0?"$"+(r.budget-r.amt).toFixed(2):"—"}</td></tr>`).join("")}${vacTotal>0?`<tr><td style="color:#7c3aed;font-weight:600">Vacation</td><td style="text-align:right;color:#dc2626">$${vacTotal.toFixed(2)}</td><td style="text-align:right;color:#64748b">—</td><td style="text-align:right;color:#64748b">—</td></tr>`:""}</table></body></html>`;
     const w=window.open("","_blank","width=800,height=600");
+    if(!w){return;}
     w.document.write(html);w.document.close();
     setTimeout(()=>w.print(),500);
   };

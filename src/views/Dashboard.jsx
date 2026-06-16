@@ -272,7 +272,7 @@ function Dashboard({txns,expected,cats,catBudgets,catIcons={},month,setMonth,onC
       {(accounts.length>0||holdings.length>0)&&(
         <div style={{...CA,padding:"12px 18px",marginBottom:12,display:"flex",alignItems:"center",gap:20,flexWrap:"wrap"}}>
           <div style={{fontSize:11,fontWeight:500,color:T.tx3,flexShrink:0}}>Net Worth</div>
-          <div style={{fontSize:18,fontWeight:600,color:netWorth>=0?GREEN:RED}}>{nfmt(netWorth+(portfolioValue||0))}</div>
+          <div style={{fontSize:18,fontWeight:600,color:(netWorth+portfolioValue)>=0?GREEN:RED}}>{nfmt(netWorth+(portfolioValue||0))}</div>
           <div style={{fontSize:12,color:T.tx3,display:"flex",gap:14,flexWrap:"wrap"}}>
             <span>Assets <span style={{color:GREEN,fontWeight:500}}>{nfmt(totalAssets,netWorth+(portfolioValue||0))}</span></span>
             <span>Liabilities <span style={{color:RED,fontWeight:500}}>{nfmt(totalLiab,netWorth+(portfolioValue||0))}</span></span>

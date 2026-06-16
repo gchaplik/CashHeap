@@ -66,12 +66,13 @@ function Categories({
   merchantNorms=[], onUpdateMerchantNorms,
   txns=[], expectedMonthlyIncome=0, settings={},
 }) {
+  const nfmt=useNfmt();
   const [newCat,setNewCat]=useState("");
   const [editIdx,setEditIdx]=useState(null);
   const [editVal,setEditVal]=useState("");
   const [budgetEdit,setBudgetEdit]=useState({});
   const [iconPickerFor,setIconPickerFor]=useState(null);
-  const add=()=>{const t=newCat.trim();if(!t||cats.includes(t))return;onUpdate([...cats,t]);setNewCat("");};
+  const add=()=>{const t=newCat.trim();if(!t||cats.some(c=>c.toLowerCase()===t.toLowerCase()))return;onUpdate([...cats,t]);setNewCat("");};
   const del=i=>{
     const c=cats[i];
     onUpdate(cats.filter((_,j)=>j!==i));
@@ -95,7 +96,7 @@ function Categories({
   // Budget suggestions: 3-month average spend per category
   const budgetSuggestions=useMemo(()=>{
     const now=new Date();
-    const months=Array.from({length:3},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-2+i,1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");});
+    const months=Array.from({length:3},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-3+i,1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");});
     return cats.reduce((acc,c)=>{
       const total=months.reduce((s,ym)=>s+txns.filter(t=>t.type==="expense"&&t.category===c&&t.date?.startsWith(ym)).reduce((ss,t)=>ss+t.amount,0),0);
       const avg=Math.ceil(total/3/10)*10;
