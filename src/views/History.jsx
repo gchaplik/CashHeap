@@ -5,6 +5,7 @@ import { today, uid, cLabel } from "../utils/formatters.js";
 import { buildDates } from "../utils/dateUtils.js";
 import { nfmt } from "../utils/discrete.jsx";
 import { learnCategory } from "../utils/catLearn.js";
+import { sumExpenses, sumIncome } from "../utils/spending.js";
 
 const parseTags = note => (note || "").match(/#\w+/g) || [];
 
@@ -55,7 +56,7 @@ function SplitModal({ t, cats, onSave, onClose }) {
   );
 }
 
-function History({ txns, cats, onUpdate, fMonth, setFMonth, onToast, subscriptions = [], merchantNorms = [] }) {
+function History({ txns, cats, onUpdate, fMonth, setFMonth, onToast, subscriptions = [], merchantNorms = [], vacationTxns = [] }) {
   const [fCat, setFCat] = useState("all");
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState(null);
@@ -130,8 +131,9 @@ function History({ txns, cats, onUpdate, fMonth, setFMonth, onToast, subscriptio
   const toggleExpand = gid => setExpanded(prev => { const n = new Set(prev); n.has(gid) ? n.delete(gid) : n.add(gid); return n; });
   const startEditGroup = (gid, gTxns) => { const rep = gTxns[0]; setEditGroupId(gid); setGEd({ merchant: rep.merchant || rep.source || "", amount: String(rep.amount || ""), category: rep.category || cats[0] || "Other", cadence: rep.cadence || "monthly", startDate: gTxns[0].date || today(), occurrences: String(gTxns.length), note: rep.note || "", type: rep.type }); };
   const saveGroup = () => { const amtNum = parseFloat(gEd.amount) || 0; const count = Math.max(1, parseInt(gEd.occurrences) || 1); const dates = buildDates(gEd.startDate, gEd.cadence, count); const newEntries = dates.map(date => ({ id: uid(), groupId: editGroupId, cadence: gEd.cadence, type: gEd.type, merchant: gEd.merchant, source: gEd.merchant, amount: amtNum, date, category: gEd.type === "expense" ? gEd.category : undefined, note: gEd.note })); onUpdate([...txns.filter(t => t.groupId !== editGroupId), ...newEntries]); setEditGroupId(null); };
-  const totI = filtered.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
-  const totE = filtered.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const activeMonth = fMonth !== "all" ? fMonth : null;
+  const totI = sumIncome(filtered);
+  const totE = sumExpenses(filtered, vacationTxns, activeMonth);
   const ss = { padding: "7px 10px", borderRadius: 7, border: "1px solid #d1d5db", fontSize: 12, background: "#fff", fontFamily: "inherit" };
   const rBtn = (onClick, bdr, col, txt) => <button onClick={onClick} style={{ background: "none", border: "1px solid " + bdr, borderRadius: 5, padding: "3px 9px", cursor: "pointer", fontSize: 11, color: col, fontFamily: "inherit" }}>{txt}</button>;
   const toggleSelect = id => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });

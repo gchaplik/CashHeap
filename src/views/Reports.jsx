@@ -8,6 +8,7 @@ import { fetchData as loadServerData, patchData as saveServerData } from "../api
 import { getCatIcon, ICON_SET, ICON_BY_KEY, ICON_GROUPS, ICON_KEYWORDS } from "../icons/index.jsx";
 import { nfmt, useNfmt, DiscreteModeCtx, DiscreteModeBlockedCard } from "../utils/discrete.jsx";
 import { fetchUsdCad } from "../utils/fx.js";
+import { sumExpenses, sumIncome } from "../utils/spending.js";
 
 function Reports({txns,bills,billPayments,cats,catBudgets,goals,vacations,vacationTxns,settings}){
   const [reportType,setReportType]=useState("monthly");
@@ -138,16 +139,16 @@ function Reports({txns,bills,billPayments,cats,catBudgets,goals,vacations,vacati
     }
   };
 
-  const totalIncome=txns.filter(t=>t.type==="income"&&t.date?.startsWith(String(year))).reduce((s,t)=>s+t.amount,0);
-  const totalExpenses=[...txns,...vacationTxns].filter(t=>t.type==="expense"&&t.date?.startsWith(String(year))).reduce((s,t)=>s+t.amount,0);
+  const totalIncome=sumIncome(txns,String(year));
+  const totalExpenses=sumExpenses(txns,vacationTxns,String(year));
   const savingsRate=totalIncome>0?((totalIncome-totalExpenses)/totalIncome*100):0;
 
   // Rolling 12-month savings rate
   const savingsRateData=useMemo(()=>Array.from({length:12},(_,i)=>{
     const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-11+i);
     const ym=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-    const inc=txns.filter(t=>t.type==="income"&&t.date?.startsWith(ym)).reduce((s,t)=>s+t.amount,0);
-    const exp=[...txns,...(vacationTxns||[])].filter(t=>t.type==="expense"&&t.date?.startsWith(ym)).reduce((s,t)=>s+t.amount,0);
+    const inc=sumIncome(txns,ym);
+    const exp=sumExpenses(txns,vacationTxns,ym);
     const rate=inc>0?Math.round((inc-exp)/inc*100):null;
     return{name:d.toLocaleString("default",{month:"short"})+"'"+String(d.getFullYear()).slice(2),rate,inc,exp};
   }),[txns,vacationTxns]);
@@ -169,11 +170,7 @@ function Reports({txns,bills,billPayments,cats,catBudgets,goals,vacations,vacati
   const yoyData=useMemo(()=>Array.from({length:12},(_,i)=>{
     const mo=String(i+1).padStart(2,"0");
     const name=new Date(`${year}-${mo}-02`).toLocaleString("default",{month:"short"});
-    const curInc=txns.filter(t=>t.type==="income"&&t.date?.startsWith(`${year}-${mo}`)).reduce((s,t)=>s+t.amount,0);
-    const curExp=[...txns,...(vacationTxns||[])].filter(t=>t.type==="expense"&&t.date?.startsWith(`${year}-${mo}`)).reduce((s,t)=>s+t.amount,0);
-    const prevInc=txns.filter(t=>t.type==="income"&&t.date?.startsWith(`${year-1}-${mo}`)).reduce((s,t)=>s+t.amount,0);
-    const prevExp=[...txns,...(vacationTxns||[])].filter(t=>t.type==="expense"&&t.date?.startsWith(`${year-1}-${mo}`)).reduce((s,t)=>s+t.amount,0);
-    return{name,[`${year} Income`]:+curInc.toFixed(2),[`${year} Expenses`]:+curExp.toFixed(2),[`${year-1} Income`]:+prevInc.toFixed(2),[`${year-1} Expenses`]:+prevExp.toFixed(2)};
+    return{name,[`${year} Income`]:+sumIncome(txns,`${year}-${mo}`).toFixed(2),[`${year} Expenses`]:+sumExpenses(txns,vacationTxns,`${year}-${mo}`).toFixed(2),[`${year-1} Income`]:+sumIncome(txns,`${year-1}-${mo}`).toFixed(2),[`${year-1} Expenses`]:+sumExpenses(txns,vacationTxns,`${year-1}-${mo}`).toFixed(2)};
   }),[txns,vacationTxns,year]);
 
   return(

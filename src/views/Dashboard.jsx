@@ -8,6 +8,7 @@ import { fetchData as loadServerData, patchData as saveServerData } from "../api
 import { getCatIcon, ICON_SET, ICON_BY_KEY, ICON_GROUPS, ICON_KEYWORDS } from "../icons/index.jsx";
 import { nfmt, useNfmt, DiscreteModeCtx, DiscreteModeBlockedCard } from "../utils/discrete.jsx";
 import { fetchUsdCad } from "../utils/fx.js";
+import { sumExpenses, sumIncome, expensesByCategory } from "../utils/spending.js";
 import { idbPut, idbGet, idbDel } from "../utils/idb.js";
 import { extractReceipt } from "../utils/receiptOCR.js";
 import { SelectableWrapper } from "../components/SelectableWrapper.jsx";
@@ -102,13 +103,11 @@ function Dashboard({txns,expected,cats,catBudgets,catIcons={},month,setMonth,onC
   const opts=Array.from({length:13},(_,i)=>{const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-12+i);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");});
   const ml=m=>new Date(m+"-02").toLocaleString("default",{month:"long",year:"numeric"});
   const mt=txns.filter(t=>t.date&&t.date.startsWith(month));
-  const actualIncome=mt.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
-  const txnSpending=mt.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+  const actualIncome=sumIncome(txns,month);
   const vacSpendMonth=vacationTxns.filter(t=>t.date&&t.date.startsWith(month)).reduce((s,t)=>s+t.amount,0);
-  // spending = expense transactions + vacation transactions only.
-  // bill_payments are NOT added here — bills are tracked as expense transactions when paid,
-  // so adding paidBillsTotal would double-count any bill that also has an expense transaction.
-  const spending=txnSpending+vacSpendMonth;
+  // Spending = expense transactions + vacation transactions. Bill payments are NOT added separately
+  // (they're already captured as expense transactions when marked paid, so would double-count).
+  const spending=sumExpenses(txns,vacationTxns,month);
   const mExp=expected.filter(e=>e.expectedDate&&e.expectedDate.startsWith(month));
   const pendingExp=mExp.filter(e=>!e.confirmed).reduce((s,e)=>s+e.amount,0);
   const totalExp=mExp.reduce((s,e)=>s+e.amount,0);
@@ -116,10 +115,9 @@ function Dashboard({txns,expected,cats,catBudgets,catIcons={},month,setMonth,onC
   const actNet=actualIncome-spending;
   // Month-over-month (include vacation in prev month too)
   const prevMonth=(()=>{const d=new Date(month+"-02");d.setMonth(d.getMonth()-1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");})();
-  const ptxns=txns.filter(t=>t.date&&t.date.startsWith(prevMonth));
-  const prevIncome=ptxns.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
-  const prevVacSpend=vacationTxns.filter(t=>t.date&&t.date.startsWith(prevMonth)).reduce((s,t)=>s+t.amount,0);
-  const prevSpending=ptxns.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0)+prevVacSpend;
+  const prevIncome=sumIncome(txns,prevMonth);
+  const prevSpending=sumExpenses(txns,vacationTxns,prevMonth);
+  const prevCatAmounts=expensesByCategory(txns,vacationTxns,prevMonth);
   const prevActNet=prevIncome-prevSpending;
   // Effective budgets: base + rollover carry-forward if enabled per category
   const effectiveBudgets=(()=>{
@@ -127,26 +125,22 @@ function Dashboard({txns,expected,cats,catBudgets,catIcons={},month,setMonth,onC
     const rollover=settings?.catRollover||{};
     cats.forEach(cat=>{
       if(rollover[cat]&&catBudgets[cat]>0){
-        const prevSpend=ptxns.filter(t=>t.type==="expense"&&t.category===cat).reduce((s,t)=>s+t.amount,0);
-        const carryover=Math.max(0,catBudgets[cat]-prevSpend);
+        const carryover=Math.max(0,catBudgets[cat]-(prevCatAmounts[cat]||0));
         if(carryover>0) result[cat]=(result[cat]||0)+carryover;
       }
     });
     return result;
   })();
   // Category breakdown includes vacation txns (bucketed under their category)
-  const vacBycat=vacationTxns.filter(t=>t.date&&t.date.startsWith(month)).reduce((m,t)=>{const c=t.category||"Vacation";m[c]=(m[c]||0)+t.amount;return m;},{});
-  const catData=cats.map(c=>({name:c,amount:mt.filter(t=>t.type==="expense"&&t.category===c).reduce((s,t)=>s+t.amount,0)+(vacBycat[c]||0),budget:effectiveBudgets[c]||0,hasRollover:!!(settings?.catRollover?.[c]&&(effectiveBudgets[c]||0)>(catBudgets[c]||0))})).filter(d=>d.amount>0||d.budget>0).sort((a,b)=>b.amount-a.amount);
-  // Add any vacation categories not in cats list (e.g. "Vacation")
-  Object.entries(vacBycat).forEach(([c,amt])=>{if(!cats.includes(c)&&!catData.find(d=>d.name===c))catData.push({name:c,amount:amt,budget:0,hasRollover:false});});
+  const catAmounts=expensesByCategory(txns,vacationTxns,month);
+  const catData=cats.map(c=>({name:c,amount:catAmounts[c]||0,budget:effectiveBudgets[c]||0,hasRollover:!!(settings?.catRollover?.[c]&&(effectiveBudgets[c]||0)>(catBudgets[c]||0))})).filter(d=>d.amount>0||d.budget>0).sort((a,b)=>b.amount-a.amount);
+  Object.entries(catAmounts).forEach(([c,amt])=>{if(!cats.includes(c)&&!catData.find(d=>d.name===c))catData.push({name:c,amount:amt,budget:0,hasRollover:false});});
   catData.sort((a,b)=>b.amount-a.amount);
   const trend=Array.from({length:6},(_,i)=>{
     const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-5+i);
     const ym=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-    const tx=txns.filter(t=>t.date&&t.date.startsWith(ym));
     const ex=expected.filter(e=>e.expectedDate&&e.expectedDate.startsWith(ym));
-    const vx=vacationTxns.filter(t=>t.date&&t.date.startsWith(ym)).reduce((s,t)=>s+t.amount,0);
-    return {name:d.toLocaleString("default",{month:"short"}),Income:+tx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0).toFixed(2),Expenses:+(tx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0)+vx).toFixed(2),Expected:+ex.reduce((s,e)=>s+e.amount,0).toFixed(2)};
+    return {name:d.toLocaleString("default",{month:"short"}),Income:+sumIncome(txns,ym).toFixed(2),Expenses:+sumExpenses(txns,vacationTxns,ym).toFixed(2),Expected:+ex.reduce((s,e)=>s+e.amount,0).toFixed(2)};
   });
   const recent=[...mt].sort((a,b)=>(b.date||"").localeCompare(a.date||"")).slice(0,8);
   const activeVacations=vacations.filter(v=>v.startDate&&v.startDate.slice(0,7)<=month&&v.endDate&&v.endDate.slice(0,7)>=month);
@@ -162,7 +156,7 @@ function Dashboard({txns,expected,cats,catBudgets,catIcons={},month,setMonth,onC
   const alertCats=catData.filter(d=>d.budget>0&&d.amount/d.budget>=0.8).sort((a,b)=>b.amount/b.budget-a.amount/a.budget);
   // Annual summary
   const curYear=month.slice(0,4);
-  const yearData=Array.from({length:12},(_,i)=>{const ym=curYear+"-"+String(i+1).padStart(2,"0");const tx=txns.filter(t=>t.date&&t.date.startsWith(ym));return{name:new Date(ym+"-02").toLocaleString("default",{month:"short"}),Income:+tx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0).toFixed(2),Expenses:+tx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0).toFixed(2)};});
+  const yearData=Array.from({length:12},(_,i)=>{const ym=curYear+"-"+String(i+1).padStart(2,"0");return{name:new Date(ym+"-02").toLocaleString("default",{month:"short"}),Income:+sumIncome(txns,ym).toFixed(2),Expenses:+sumExpenses(txns,vacationTxns,ym).toFixed(2)};});
   const yearIncome=yearData.reduce((s,d)=>s+d.Income,0);
   const yearExpenses=yearData.reduce((s,d)=>s+d.Expenses,0);
   const GREEN="#059669", RED="#dc2626", YELLOW="#d97706";
