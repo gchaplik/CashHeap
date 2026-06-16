@@ -3,13 +3,14 @@ import { T, IS, CA, Fld, Btn } from "../theme/tokens.jsx";
 import { CADENCES } from "../constants/index.js";
 import { today, uid, cLabel } from "../utils/formatters.js";
 import { buildDates } from "../utils/dateUtils.js";
-import { nfmt } from "../utils/discrete.jsx";
+import { useNfmt } from "../utils/discrete.jsx";
 import { learnCategory } from "../utils/catLearn.js";
 import { sumExpenses, sumIncome } from "../utils/spending.js";
 
 const parseTags = note => (note || "").match(/#\w+/g) || [];
 
 function SplitModal({ t, cats, onSave, onClose }) {
+  const nfmt = useNfmt();
   const initAmt = parseFloat(t.amount) || 0;
   const half = (initAmt / 2).toFixed(2);
   const [splits, setSplits] = useState([
@@ -57,6 +58,7 @@ function SplitModal({ t, cats, onSave, onClose }) {
 }
 
 function History({ txns, cats, onUpdate, fMonth, setFMonth, onToast, subscriptions = [], merchantNorms = [], vacationTxns = [] }) {
+  const nfmt = useNfmt();
   const [fCat, setFCat] = useState("all");
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState(null);

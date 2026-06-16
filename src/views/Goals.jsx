@@ -22,7 +22,7 @@ function Goals({goals,onSaveGoals}){
   };
   const logContrib=id=>{
     const amt=parseFloat(contrib[id])||0;if(!amt)return;
-    onSaveGoals(goals.map(g=>g.id===id?{...g,currentAmount:Math.min(g.currentAmount+amt,g.targetAmount)}:g));
+    onSaveGoals(goals.map(g=>g.id===id?{...g,currentAmount:g.currentAmount+amt}:g));
     setContrib(p=>({...p,[id]:""}));
   };
   const remove=id=>onSaveGoals(goals.filter(g=>g.id!==id));

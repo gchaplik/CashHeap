@@ -20,7 +20,7 @@ function DebtTracker({debts=[],onSaveDebts}){
 
   const save=()=>{
     if(!form.name.trim()||!form.balance||!form.rate) return;
-    const item={...form,id:form.id||uid(),balance:+form.balance,rate:+form.rate,minPayment:+form.minPayment||0};
+    const item={...form,id:form.id||uid(),balance:+form.balance,rate:+form.rate,minPayment:+form.minPayment||0,...(!form.id&&{initialBalance:+form.balance})};
     onSaveDebts(form.id?debts.map(d=>d.id===form.id?item:d):[...debts,item]);
     setForm(blank);setEditing(false);
   };
@@ -107,7 +107,7 @@ function DebtTracker({debts=[],onSaveDebts}){
             <div>Debt</div><div>Balance</div><div>Rate</div><div>Min Pay</div><div style={{textAlign:"center"}}>Progress to zero</div><div/>
           </div>
           {debts.map(d=>{
-            const pct=Math.max(0,Math.min(100,100-(d.balance/(d.balance+0.01))*100));
+            const pct=d.initialBalance>0?Math.max(0,Math.min(100,(1-d.balance/d.initialBalance)*100)):0;
             return(
               <div key={d.id} style={{display:"grid",gridTemplateColumns:"1fr 100px 80px 90px 1fr 80px",alignItems:"center",padding:"12px 16px",borderBottom:"1px solid #f1f5f9"}}>
                 <div><div style={{fontWeight:600,fontSize:13}}>{d.name}</div><div style={{fontSize:11,color:"#94a3b8"}}>{d.type}</div></div>

@@ -31,7 +31,7 @@ function CashFlowForecast({txns,bills,billPayments,expected,accounts,settings,ca
     const expenseTxns=txns.filter(t=>t.type==="expense");
 
     // Find the earliest month that has any expense data
-    const monthsWithData=new Set(expenseTxns.map(t=>t.date.slice(0,7)));
+    const monthsWithData=new Set(expenseTxns.filter(t=>t.date).map(t=>t.date.slice(0,7)));
     const sortedMonths=[...monthsWithData].sort();
     const dataMonthCount=sortedMonths.length;
 
@@ -45,7 +45,7 @@ function CashFlowForecast({txns,bills,billPayments,expected,accounts,settings,ca
 
     // Per-category 3-month totals and month counts
     const catMonthTotals={}; // {cat: {ym: total}}
-    expenseTxns.filter(t=>last3Months.includes(t.date.slice(0,7))).forEach(t=>{
+    expenseTxns.filter(t=>t.date&&last3Months.includes(t.date.slice(0,7))).forEach(t=>{
       const cat=t.category||"Uncategorized";
       const ym=t.date.slice(0,7);
       if(!catMonthTotals[cat]) catMonthTotals[cat]={};

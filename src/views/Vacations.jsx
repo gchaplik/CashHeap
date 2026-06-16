@@ -6,10 +6,11 @@ import { fmt, fmtUSD, today, uid, toB64, cLabel, isPdf, fpHash } from "../utils/
 import { buildDates, _df, _label, _sqlDf } from "../utils/dateUtils.js";
 import { fetchData as loadServerData, patchData as saveServerData } from "../api/client.js";
 import { getCatIcon, ICON_SET, ICON_BY_KEY, ICON_GROUPS, ICON_KEYWORDS } from "../icons/index.jsx";
-import { nfmt, useNfmt, DiscreteModeCtx, DiscreteModeBlockedCard } from "../utils/discrete.jsx";
+import { useNfmt } from "../utils/discrete.jsx";
 import { fetchUsdCad } from "../utils/fx.js";
 
 function Vacations({vacations,vacationTxns,onSaveVacations,onSaveTxns}){
+  const nfmt=useNfmt();
   const [view,setView]=useState("list"); // "list" | "detail" | "new"
   const [activeId,setActiveId]=useState(null);
   const [form,setForm]=useState({name:"",startDate:today(),endDate:today(),budget:""});
@@ -92,7 +93,7 @@ function Vacations({vacations,vacationTxns,onSaveVacations,onSaveTxns}){
           </div>
         )}
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))",gap:10,marginBottom:16}}>
-          {[{l:"Total Spent",v:nfmt(total),c:"#dc2626"},{l:"Budget",v:vac.budget>0?nfmt(vac.budget):"—",c:"#f59e0b"},{l:remaining>=0?"Remaining":"Over Budget",v:remaining!=null?nfmt(Math.abs(remaining)):"—",c:remaining==null?"#9ca3af":remaining>=0?"#059669":"#dc2626"},{l:"Dates",v:vac.startDate+" – "+vac.endDate,c:"#374151",small:true}].map(card=>(
+          {[{l:"Total Spent",v:nfmt(total),c:"#dc2626"},{l:"Budget",v:vac.budget>0?nfmt(vac.budget):"—",c:"#f59e0b"},{l:remaining==null?"Budget":remaining===0?"Fully Spent":remaining>0?"Remaining":"Over Budget",v:remaining!=null?nfmt(Math.abs(remaining)):"—",c:remaining==null?"#9ca3af":remaining===0?"#94a3b8":remaining>0?"#059669":"#dc2626"},{l:"Dates",v:vac.startDate+" – "+vac.endDate,c:"#374151",small:true}].map(card=>(
             <div key={card.l} style={{...CA,padding:"12px 14px"}}>
               <div style={{fontSize:10,fontWeight:600,color:"#9ca3af",textTransform:"uppercase",letterSpacing:"0.6px",marginBottom:4}}>{card.l}</div>
               <div style={{fontSize:card.small?12:16,fontWeight:700,color:card.c}}>{card.v}</div>
