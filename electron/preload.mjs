@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+const isDev = process.argv.includes('--cashheap-dev')
+
 contextBridge.exposeInMainWorld('electronUpdater', {
   onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (_e, info) => cb(info)),
   onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', (_e, info) => cb(info)),
@@ -11,6 +13,7 @@ contextBridge.exposeInMainWorld('electronUpdater', {
 
 contextBridge.exposeInMainWorld('electronApp', {
   quit: () => ipcRenderer.send('quit-app'),
+  isDev,
 })
 
 contextBridge.exposeInMainWorld('electronBiometrics', {

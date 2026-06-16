@@ -95,6 +95,7 @@ function Settings({settings,onSave,authConfig,onSaveAuthConfig,onStartTutorial})
 
   // ── Update state ──────────────────────────────────────────────────────────
   const isElectron=!!window.electronLocalUpdate;
+  const isPackaged=window.electronApp&&!window.electronApp.isDev;
   // Local update
   const [localStatus,setLocalStatus]=useState(null); // null|'building'|'done'|'error'
   const [localLog,setLocalLog]=useState([]);
@@ -384,14 +385,45 @@ function Settings({settings,onSave,authConfig,onSaveAuthConfig,onStartTutorial})
               </div>
               <div>
                 <div style={{fontSize:11,fontWeight:600,color:T.tx2,marginBottom:4}}>Model</div>
-                <input
-                  style={IS}
-                  value={f.openrouterModel||"moonshotai/kimi-k2"}
-                  onChange={e=>set("openrouterModel",e.target.value)}
-                  placeholder="moonshotai/kimi-k2"
-                />
+                {(()=>{
+                  const PRESETS=[
+                    {id:"moonshotai/kimi-k2",label:"Kimi K2 — Moonshot (free tier)"},
+                    {id:"nexagillc/nex-n2-pro:free",label:"Nex-N2-Pro — Nex AGI (free)"},
+                    {id:"google/gemini-2.0-flash-exp:free",label:"Gemini 2.0 Flash — Google (free)"},
+                    {id:"deepseek/deepseek-r1:free",label:"DeepSeek R1 (free)"},
+                    {id:"meta-llama/llama-3.1-8b-instruct:free",label:"Llama 3.1 8B — Meta (free)"},
+                    {id:"anthropic/claude-3.5-haiku",label:"Claude 3.5 Haiku — Anthropic"},
+                    {id:"openai/gpt-4o-mini",label:"GPT-4o Mini — OpenAI"},
+                    {id:"__custom__",label:"Custom model ID…"},
+                  ];
+                  const currentModel=f.openrouterModel||"moonshotai/kimi-k2";
+                  const isCustom=!PRESETS.slice(0,-1).some(p=>p.id===currentModel);
+                  return(
+                    <>
+                      <select
+                        style={{...IS,cursor:"pointer"}}
+                        value={isCustom?"__custom__":currentModel}
+                        onChange={e=>{
+                          if(e.target.value==="__custom__") set("openrouterModel","");
+                          else set("openrouterModel",e.target.value);
+                        }}
+                      >
+                        {PRESETS.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
+                      </select>
+                      {isCustom&&(
+                        <input
+                          style={{...IS,marginTop:6}}
+                          value={currentModel==="__custom__"?"":currentModel}
+                          onChange={e=>set("openrouterModel",e.target.value)}
+                          placeholder="e.g. nexagillc/nex-n2-pro:free"
+                          autoFocus
+                        />
+                      )}
+                    </>
+                  );
+                })()}
                 <div style={{fontSize:11,color:T.tx3,marginTop:4}}>
-                  Suggestions: <code style={{background:T.overlay,padding:"1px 4px",borderRadius:3}}>moonshotai/kimi-k2</code> · <code style={{background:T.overlay,padding:"1px 4px",borderRadius:3}}>anthropic/claude-3.5-haiku</code> · <code style={{background:T.overlay,padding:"1px 4px",borderRadius:3}}>openai/gpt-4o-mini</code>
+                  Find model IDs at <a href="https://openrouter.ai/models" target="_blank" rel="noreferrer" style={{color:T.accent}}>openrouter.ai/models</a>
                 </div>
               </div>
               <SmBtn onClick={()=>onSave({...f})} label="Save"/>
@@ -465,10 +497,10 @@ function Settings({settings,onSave,authConfig,onSaveAuthConfig,onStartTutorial})
           <div><div style={SRL}>Tutorial</div><div style={SRS}>Walk through CashHeap's key features</div></div>
           <SmBtn onClick={onStartTutorial} label="Start Tutorial"/>
         </div>
-        <div style={SR}>
+        {!isPackaged&&<div style={SR}>
           <div><div style={SRL}>Developer Mode</div><div style={SRS}>Unlocks the Data Model editor</div></div>
           <Toggle on={f.devMode} onToggle={()=>{set("devMode",!f.devMode);setTimeout(()=>onSave({...f,devMode:!f.devMode}),50);}}/>
-        </div>
+        </div>}
         {isElectron&&<>
           <div style={SR}>
             <div><div style={SRL}>Update from Source</div><div style={SRS}>Rebuild and reinstall from local code</div></div>

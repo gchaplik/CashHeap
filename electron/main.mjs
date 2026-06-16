@@ -154,6 +154,7 @@ app.whenReady().then(async () => {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false,
+      additionalArguments: isDev ? ['--cashheap-dev'] : [],
     },
   })
 
@@ -183,7 +184,7 @@ app.whenReady().then(async () => {
   }
 
   win.loadURL(url)
-  win.webContents.openDevTools({ mode: 'detach' })
+  if (isDev) win.webContents.openDevTools({ mode: 'detach' })
 })
 
 app.on('second-instance', () => {

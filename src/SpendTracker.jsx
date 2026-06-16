@@ -97,6 +97,8 @@ export default function App(){
   const [settlements,setSettlements]=useState([]);
   const [settings,setSettings]=useState(DEFAULT_SETTINGS);
   const [schema,setSchema]=useState(DEFAULT_SCHEMA);
+  const isPackaged=window.electronApp&&!window.electronApp.isDev;
+  const devMode=!isPackaged&&settings.devMode;
   const [insightWidgets,setInsightWidgets]=useState([]);
   const [insightMessages,setInsightMessages]=useState([]);
   const [favourites,setFavourites]=useState(["bills","expected","history","stocks"]);
@@ -290,8 +292,8 @@ export default function App(){
   },[settings.viewShortcuts,view,tabs,closeTab,reopenLastClosedTab]);
 
   useEffect(()=>{
-    if(!settings.devMode && view==="toolcoverage") setView("dashboard");
-  },[settings.devMode,view]);
+    if(!devMode && view==="toolcoverage") setView("dashboard");
+  },[devMode,view]);
 
   const saveTxns=t=>{
     const threshold=settings.largeTransactionAlert||500;
@@ -537,10 +539,10 @@ export default function App(){
       {showWhatsNew&&<WhatsNewModal onClose={()=>setShowWhatsNew(false)}/>}
       {showTutorial&&<Suspense fallback={null}><TutorialModal onClose={()=>{setShowTutorial(false);if(!tutorialSeen){setTutorialSeen(true);saveServerData({tutorialSeen:true});}}} onNavigate={v=>{setView(v);}}/></Suspense>}
       {toast&&<Toast msg={toast.msg} undoFn={toast.undoFn} onClose={dismissToast}/>}
-      <CommandPalette open={cmdPaletteOpen} onClose={()=>setCmdPaletteOpen(false)} onNavigate={v=>{setView(v);}} devMode={settings.devMode}/>
+      <CommandPalette open={cmdPaletteOpen} onClose={()=>setCmdPaletteOpen(false)} onNavigate={v=>{setView(v);}} devMode={devMode}/>
       {quickAddOpen&&<QuickAdd cats={cats} onSave={t=>{saveTxns([...txns,t]);setQuickAddOpen(false);showToast("Transaction added");}} onClose={()=>setQuickAddOpen(false)}/>}
 
-      <Sidebar view={view} onNavigate={setView} favourites={favourites} onToggleFavourite={toggleFavourite} onReorderFavourites={next=>{setFavourites(next);saveServerData({favourites:next});}} pendingCount={pendingCount} unpaidBillCount={unpaidBillCount} devMode={settings.devMode} onShowWhatsNew={()=>setShowWhatsNew(v=>!v)} onSignOut={authConfig.pinHash?()=>{setIsUnlocked(false);setIdleBlur(false);}:undefined} shortcuts={settings.viewShortcuts||{}}/>
+      <Sidebar view={view} onNavigate={setView} favourites={favourites} onToggleFavourite={toggleFavourite} onReorderFavourites={next=>{setFavourites(next);saveServerData({favourites:next});}} pendingCount={pendingCount} unpaidBillCount={unpaidBillCount} devMode={devMode} onShowWhatsNew={()=>setShowWhatsNew(v=>!v)} onSignOut={authConfig.pinHash?()=>{setIsUnlocked(false);setIdleBlur(false);}:undefined} shortcuts={settings.viewShortcuts||{}}/>
 
       <div data-tutorial="main-content" style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
         <TabBar
@@ -597,8 +599,8 @@ export default function App(){
         {view==="mortgage"&&<MortgageCalculator accounts={accounts} onSaveAccounts={saveAccounts}/>}
         {view==="household"&&<Household members={members} onSaveMembers={saveMembers} txns={txns} onSaveTxns={saveTxns} splits={splits} onSaveSplits={saveSplits} settlements={settlements} onSaveSettlements={saveSettlements}/>}
         {view==="settings"&&<Settings settings={settings} onSave={saveSettings} authConfig={authConfig} onSaveAuthConfig={saveAuthConfig} onStartTutorial={()=>{setView("dashboard");setShowTutorial(true);}}/>}
-        {view==="datamodel"&&settings.devMode&&<DataModel schema={schema} onSave={saveSchema}/>}
-        {view==="toolcoverage"&&settings.devMode&&<ToolCoveragePanel/>}
+        {view==="datamodel"&&devMode&&<DataModel schema={schema} onSave={saveSchema}/>}
+        {view==="toolcoverage"&&devMode&&<ToolCoveragePanel/>}
         {view==="insights"&&<Insights schema={schema} settings={settings} onNavigate={setView} widgets={insightWidgets} onSetWidgets={setInsightWidgets} messages={insightMessages} onSetMessages={setInsightMessages} discreteMode={discreteMode}/>}
         </Suspense>
         </div>
