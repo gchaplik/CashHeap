@@ -10,10 +10,10 @@ export const upsertVacation = (v) => {
   });
 };
 
-export const removeVacation = (id) => {
+export const removeVacation = db.transaction((id) => {
   db.prepare("DELETE FROM vacations WHERE id=?").run(id);
   db.prepare("DELETE FROM vacation_txns WHERE vacationId=?").run(id);
-};
+});
 
 export const addTxn = (t) => {
   db.prepare(`INSERT OR REPLACE INTO vacation_txns (id,vacationId,amount,date,merchant,note)

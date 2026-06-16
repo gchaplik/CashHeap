@@ -507,7 +507,7 @@ function RecurringForm({title,type,cats,onSaveMultiple}){
         )}
         {recurring&&amtNum>0&&!isUSD&&<div style={{background:"linear-gradient(135deg,#f0f9ff,#e0f2fe)",border:"1px solid #7dd3fc",borderRadius:12,padding:"11px 14px",marginBottom:16,fontSize:13,color:"#0369a1",fontWeight:500}}>{count} payments of <strong>{nfmt(amtNum)} CAD</strong> = <strong style={{fontWeight:800}}>{nfmt(amtNum*count)} CAD</strong> — {lbl.toLowerCase()}, starting {f.date}</div>}
         {recurring&&amtNum>0&&isUSD&&cadAmt>0&&<div style={{background:"linear-gradient(135deg,#f0f9ff,#e0f2fe)",border:"1px solid #7dd3fc",borderRadius:12,padding:"11px 14px",marginBottom:16,fontSize:13,color:"#0369a1",fontWeight:500}}>{count} payments of <strong>${amtNum.toFixed(2)} USD</strong> ({nfmt(cadAmt)} CAD each) = <strong style={{fontWeight:800}}>{nfmt(cadAmt*count)} CAD</strong> — {lbl.toLowerCase()}, starting {f.date}</div>}
-        <Btn onClick={submit} disabled={!f.merchant.trim()||!f.amount||(isUSD&&!effectiveRate)} full>{recurring?"Log "+count+" Entries":"Add "+title}</Btn>
+        <Btn onClick={submit} disabled={!f.merchant.trim()||!f.amount||(isUSD&&!effectiveRate)} full>{recurring?"Log "+count+" Entries":title}</Btn>
       </div>
     </div>
   );

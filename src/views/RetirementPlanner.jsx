@@ -25,7 +25,7 @@ function RetirementPlanner({txns,accounts,settings}){
 
   // Future value: existing savings + monthly contributions compounded
   const existing=rrsp+tfsa;
-  const fvExisting=existing*Math.pow(1+rate/100,yearsToRetire);
+  const fvExisting=existing*Math.pow(1+monthlyRate,n);
   const fvContribs=contrib>0&&monthlyRate>0?contrib*(Math.pow(1+monthlyRate,n)-1)/monthlyRate*Math.pow(1+monthlyRate,1):contrib*n;
   const projected=Math.round(fvExisting+fvContribs);
   const gap=Math.max(0,retireTarget-projected);
@@ -35,7 +35,7 @@ function RetirementPlanner({txns,accounts,settings}){
   const chartData=[];
   for(let y=0;y<=yearsToRetire;y+=Math.max(1,Math.floor(yearsToRetire/10))){
     const nm=y*12;
-    const evEx=existing*Math.pow(1+rate/100,y);
+    const evEx=existing*Math.pow(1+monthlyRate,y*12);
     const evCon=contrib>0&&monthlyRate>0?contrib*(Math.pow(1+monthlyRate,nm)-1)/monthlyRate*Math.pow(1+monthlyRate,1):contrib*nm;
     chartData.push({age:age+y,Projected:Math.round(evEx+evCon),Target:retireTarget});
   }

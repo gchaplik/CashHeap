@@ -278,7 +278,7 @@ export default function App(){
       if(e.key==="Tab"&&e.shiftKey&&!e.metaKey&&!e.ctrlKey&&!inInput()){
         e.preventDefault();
         const idx=tabs.indexOf(view);
-        setView(tabs[(idx+1)%tabs.length]);
+        setView(tabs[(idx-1+tabs.length)%tabs.length]);
         return;
       }
       for(const[vk,combo] of Object.entries(sc)){if(matchesCombo(e,combo)){e.preventDefault();setView(vk);return;}}
@@ -383,7 +383,7 @@ export default function App(){
     const nw=assets-liab;
     const prev=prevNetWorthRef.current;
     if(prev!==null&&prev!==nw){
-      const crossed=MILESTONES.filter(m=>(prev<m&&nw>=m)||(prev>=-m&&nw<=-m));
+      const crossed=MILESTONES.filter(m=>(prev<m&&nw>=m)||(prev>-m&&nw<=-m));
       if(crossed.length>0){
         const m=crossed[0];
         const sign=nw>=0?"+":"-";
@@ -410,7 +410,7 @@ export default function App(){
         if(!b.dueDay) return;
         const due=new Date(new Date().getFullYear(),new Date().getMonth(),b.dueDay).setHours(0,0,0,0);
         const diff=due-todayMs;
-        if(diff>=0&&diff<=threeMs) msgs.push({title:"Bill Due Soon",body:`${b.name} — ${fmt(b.amount)} due in ${Math.round(diff/86400000)} day${diff===0?"":"s"}`});
+        if(diff>=0&&diff<=threeMs) msgs.push({title:"Bill Due Soon",body:`${b.name} — ${fmt(b.amount)} due in ${Math.round(diff/86400000)} day${Math.round(diff/86400000)===1?"":"s"}`});
       });
       // Budget overage (80% and 100%)
       const mt=txns.filter(t=>t.type==="expense"&&t.date?.startsWith(curMonth));
@@ -505,7 +505,7 @@ export default function App(){
   const unpaidBillCount=bills.filter(b=>b.active!==false&&!billPayments.some(p=>p.billId===b.id&&p.month===month)).length;
 
   if(!ready) return <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",color:"#9ca3af",fontSize:13}}>Loading...</div>;
-  if(!authConfig.pinHash) return <AccountSetup onComplete={cfg=>{saveAuthConfig(cfg);setIsUnlocked(true);}}/>;
+  if(!authConfig.setupComplete&&!authConfig.pinHash) return <AccountSetup onComplete={cfg=>{saveAuthConfig(cfg);setIsUnlocked(true);}}/>;
   if(!isUnlocked) return <LockScreen authConfig={authConfig} onUnlock={()=>{setIsUnlocked(true);setIdleBlur(false);lastActivityRef.current=Date.now();}}/>;
 
   const cbFilters={none:"",deuteranopia:"url(#cb-deuteranopia)",protanopia:"url(#cb-protanopia)",tritanopia:"url(#cb-tritanopia)",achromatopsia:"url(#cb-achromatopsia)"};

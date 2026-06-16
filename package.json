@@ -96,6 +96,7 @@
     "express": "^4.19.2",
     "next": "^16.2.9",
     "pdf-parse": "^2.4.5",
+    "qrcode": "^1.5.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "recharts": "^3.8.1"

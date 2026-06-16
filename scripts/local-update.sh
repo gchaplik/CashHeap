@@ -23,12 +23,12 @@ echo "🔨 Building..."
 npm run electron:build --prefix "$SCRIPT_DIR/.."
 
 echo "🛑 Quitting app (if running)..."
-osascript -e 'tell application "Spend Tracker" to quit' 2>/dev/null || true
+osascript -e 'tell application "CashHeap" to quit' 2>/dev/null || true
 sleep 1
 
 echo "📦 Installing from $(basename "$DMG")..."
-# Detach any existing Spend Tracker volume
-hdiutil info | grep -o '/Volumes/Spend Tracker[^"]*' | while read v; do
+# Detach any existing CashHeap volume
+hdiutil info | grep -o '/Volumes/CashHeap[^"]*' | while read v; do
   hdiutil detach "$v" 2>/dev/null || true
 done
 
@@ -42,4 +42,4 @@ hdiutil detach "$MOUNT" -quiet
 echo "🚀 Launching..."
 open "/Applications/${APP_NAME}.app"
 
-echo "✅ Done — Spend Tracker updated and launched."
+echo "✅ Done — CashHeap updated and launched."

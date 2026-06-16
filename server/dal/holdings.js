@@ -26,10 +26,10 @@ export const upsertAccount = (a) => {
     .run({ id:a.id, name:a.name, type:a.type, balance:a.balance||0 });
 };
 
-export const removeAccount = (id) => {
+export const removeAccount = db.transaction((id) => {
   db.prepare("DELETE FROM accounts WHERE id=?").run(id);
   db.prepare("DELETE FROM account_history WHERE accountId=?").run(id);
-};
+});
 
 export const replaceAllHoldings = (holdings) => {
   db.transaction(() => {

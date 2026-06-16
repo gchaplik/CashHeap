@@ -44,7 +44,7 @@ function MortgageCalculator({accounts,onSaveAccounts}){
   },[showTable,principal,perRate,totalPeriods,paymentWithExtra]);
 
   const totalCost=payment*totalPeriods;
-  const totalInterest=totalCost-principal;
+  const totalInterest=totalCost-principal; // baseline without extra payments
   const downPct=(down/price*100).toFixed(1);
 
   // Extra payment savings
@@ -56,6 +56,9 @@ function MortgageCalculator({accounts,onSaveAccounts}){
   const periodsSaved=stdPayoff-extraPayoff;
   const yearsSaved=(periodsSaved/periodsPerYear).toFixed(1);
   const intSaved=(stdInt-extraInt).toFixed(0);
+
+  const displayInt=Math.round(extra>0?extraInt:stdInt);
+  const displayCost=Math.round((extra>0?extraPayoff*paymentWithExtra:stdPayoff*payment)+down);
 
   return(
     <div>
@@ -89,8 +92,8 @@ function MortgageCalculator({accounts,onSaveAccounts}){
           <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12}}>
             {[
               {label:`${freqMap[freq].l} Payment`,val:nfmt(payment),color:"#0284C7",sub:`${freqMap[freq].l} installment`},
-              {label:"Total Interest",val:nfmt(Math.round(totalInterest)),color:"#ef4444",sub:"Over full amortization"},
-              {label:"Total Cost",val:nfmt(Math.round(totalCost+down)),color:"#0f172a",sub:"Principal + interest + down"},
+              {label:"Total Interest",val:nfmt(displayInt),color:"#ef4444",sub:"Over full amortization"},
+              {label:"Total Cost",val:nfmt(displayCost),color:"#0f172a",sub:"Principal + interest + down"},
               {label:"Down Payment",val:nfmt(down),color:"#059669",sub:`${downPct}% of purchase price`},
             ].map(c=><div key={c.label} style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:16}}><div style={{fontSize:10,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{c.label}</div><div style={{fontSize:20,fontWeight:800,color:c.color}}>{c.val}</div><div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{c.sub}</div></div>)}
           </div>
@@ -111,11 +114,11 @@ function MortgageCalculator({accounts,onSaveAccounts}){
             <div style={{fontSize:12,fontWeight:700,color:"#0f172a",marginBottom:10}}>Principal vs Interest breakdown</div>
             <div style={{display:"flex",borderRadius:8,overflow:"hidden",height:20,marginBottom:8}}>
               <div style={{background:"#0284C7",flex:principal}} title={`Principal: ${nfmt(principal)}`}/>
-              <div style={{background:"#ef4444",flex:totalInterest>0?totalInterest:0}} title={`Interest: ${nfmt(Math.round(totalInterest))}`}/>
+              <div style={{background:"#ef4444",flex:displayInt>0?displayInt:0}} title={`Interest: ${nfmt(displayInt)}`}/>
             </div>
             <div style={{display:"flex",gap:16,fontSize:11}}>
-              <span style={{color:"#0284C7"}}>■ Principal: {nfmt(principal)} ({(principal/(principal+totalInterest)*100).toFixed(0)}%)</span>
-              <span style={{color:"#ef4444"}}>■ Interest: {nfmt(Math.round(totalInterest))} ({(totalInterest/(principal+totalInterest)*100).toFixed(0)}%)</span>
+              <span style={{color:"#0284C7"}}>■ Principal: {nfmt(principal)} ({(principal/(principal+displayInt)*100).toFixed(0)}%)</span>
+              <span style={{color:"#ef4444"}}>■ Interest: {nfmt(displayInt)} ({(displayInt/(principal+displayInt)*100).toFixed(0)}%)</span>
             </div>
           </div>
         </div>

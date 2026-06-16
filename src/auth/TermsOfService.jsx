@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { T, CA, Btn } from "../theme/tokens.jsx";
 
 function TermsOfServiceModal({onAccept,onDecline}){
@@ -88,8 +88,12 @@ function TermsOfServiceModal({onAccept,onDecline}){
         {/* Footer */}
         <div style={{padding:"16px 32px 24px",borderTop:"1px solid #f1f5f9",flexShrink:0,background:"#f8fafc"}}>
           {!scrolled&&(
-            <div style={{fontSize:11,color:"#94a3b8",textAlign:"center",marginBottom:12}}>
-              ↓ Scroll to the bottom to enable acceptance
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+              <div style={{fontSize:11,color:"#94a3b8"}}>↓ Scroll to the bottom to enable acceptance</div>
+              <button onClick={()=>bodyRef.current?.scrollTo({top:bodyRef.current.scrollHeight,behavior:"smooth"})}
+                style={{fontSize:11,padding:"4px 10px",borderRadius:6,border:"1px solid #cbd5e1",background:"#f8fafc",color:"#475569",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>
+                Jump to bottom
+              </button>
             </div>
           )}
           <label style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:16,cursor:"pointer",opacity:scrolled?1:0.4,pointerEvents:scrolled?"auto":"none"}}>

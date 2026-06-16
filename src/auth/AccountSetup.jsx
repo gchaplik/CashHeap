@@ -10,6 +10,7 @@ import { nfmt, useNfmt, DiscreteModeCtx, DiscreteModeBlockedCard } from "../util
 import { fetchUsdCad } from "../utils/fx.js";
 import { _b64e, _b64d, _b64ue, _b64ud, hashPin, genSalt, _b32d, calcTOTP, genTOTPSecret } from "../utils/crypto.js";
 import { MountainLogo } from "./MountainLogo.jsx";
+import QRCode from "qrcode";
 
 // ── Account Setup Wizard (first launch) ──────────────────────────────────────
 function AccountSetup({onComplete}){
@@ -27,6 +28,12 @@ function AccountSetup({onComplete}){
   const [credId,setCredId]=useState(null);
   const [bioMethod,setBioMethod]=useState("webauthn"); // "touchid"|"webauthn"
   const pinBRef=useRef(null);
+  const qrCanvasRef=useRef(null);
+  useEffect(()=>{
+    if(!qrCanvasRef.current||!totpSecret) return;
+    const uri=`otpauth://totp/CashHeap?secret=${totpSecret}&issuer=CashHeap`;
+    QRCode.toCanvas(qrCanvasRef.current,uri,{width:160,margin:1}).catch(()=>{});
+  },[totpSecret]);
 
   const IS={width:"100%",padding:"12px 14px",borderRadius:10,border:"2px solid #e2e8f0",fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box",textAlign:"center",letterSpacing:6,transition:"border-color .2s"};
 
@@ -87,6 +94,7 @@ function AccountSetup({onComplete}){
 
   const finish=(totpEnabled)=>{
     const cfg={
+      setupComplete:true,
       enabled:true,
       pinHash:savedHash,
       pinSalt:savedSalt,
@@ -99,6 +107,8 @@ function AccountSetup({onComplete}){
     };
     onComplete(cfg);
   };
+
+  const skipSetup=()=>onComplete({setupComplete:true,enabled:false,pinHash:null,pinSalt:null,webauthnCredId:null,webauthnEnabled:false,totpEnabled:false,totpSecret:null,autoLockMinutes:5});
 
   const steps=[{n:1,l:"Create PIN"},{n:2,l:"Biometrics"},{n:3,l:"2-Factor"}];
 
@@ -147,6 +157,9 @@ function AccountSetup({onComplete}){
             <button onClick={submitPin} disabled={pinA.length<6||pinB.length<6}
               style={{marginTop:4,padding:"10px 0",borderRadius:T.r,border:"none",background:pinA.length===6&&pinB.length===6?T.accent:T.overlay,color:pinA.length===6&&pinB.length===6?"#fff":T.tx3,fontSize:13,fontWeight:500,cursor:pinA.length===6&&pinB.length===6?"pointer":"default",fontFamily:"inherit",transition:"background .2s"}}
             >Continue →</button>
+            <button onClick={skipSetup} style={{background:"none",border:"none",color:T.tx3,fontSize:12,cursor:"pointer",fontFamily:"inherit",textDecoration:"underline",textAlign:"center",marginTop:2}}>
+              Skip security setup
+            </button>
           </div>
         )}
 
@@ -191,7 +204,7 @@ function AccountSetup({onComplete}){
               Scan with Google Authenticator, Authy, or any TOTP app. Optional but recommended.
             </div>
             <div style={{textAlign:"center",margin:"4px 0 8px"}}>
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(`otpauth://totp/CashHeap?secret=${totpSecret}&issuer=CashHeap`)}`} alt="QR" style={{borderRadius:T.r,border:"1px solid "+T.border}}/>
+              <canvas ref={qrCanvasRef} style={{borderRadius:T.r,border:"1px solid "+T.border,display:"block",margin:"0 auto"}}/>
               <div style={{marginTop:6,fontSize:10,color:T.tx3}}>Manual key:</div>
               <div style={{fontFamily:"monospace",fontSize:11,color:T.accent,letterSpacing:1,wordBreak:"break-all",marginTop:2}}>{totpSecret}</div>
             </div>

@@ -239,7 +239,8 @@ app.whenReady().then(() => {
     }
     w()?.webContents.send('local-update-progress', 'Building...')
     const arch = process.arch === 'arm64' ? 'arm64' : 'x64'
-    const dmgName = arch === 'arm64' ? 'CashHeap-1.0.0-arm64.dmg' : 'CashHeap-1.0.0.dmg'
+    const appVersion = app.getVersion()
+    const dmgName = arch === 'arm64' ? `CashHeap-${appVersion}-arm64.dmg` : `CashHeap-${appVersion}.dmg`
     const dmgPath = join(projectRoot, 'release', dmgName)
     const buildScript = `
       export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
