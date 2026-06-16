@@ -4,14 +4,14 @@
   "type": "module",
   "main": "electron/main.mjs",
   "scripts": {
-    "dev": "npm rebuild better-sqlite3 --silent && next dev -p 3000",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:e2e": "playwright test",
-    "electron:dev": "npm rebuild better-sqlite3 --silent && concurrently \"next dev -p 3000\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:dev": "concurrently --kill-others \"next dev -p 3000\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "next build && node scripts/resolve-next-symlinks.cjs && electron-builder",
     "electron:build:mac": "next build && node scripts/resolve-next-symlinks.cjs && electron-builder --mac",
     "electron:build:win": "next build && node scripts/resolve-next-symlinks.cjs && electron-builder --win --x64",
@@ -46,14 +46,6 @@
       {
         "from": ".next",
         "to": ".next"
-      },
-      {
-        "from": "spend.db",
-        "to": "spend.db"
-      },
-      {
-        "from": "data.json",
-        "to": "data.json"
       }
     ],
     "win": {
