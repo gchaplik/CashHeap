@@ -588,7 +588,7 @@ function SecuritySettingsSection({authConfig,onSave,compact}){
   const cfg=patch=>{const n={...AC,...patch};onSave(n);return n;};
 
   const savePIN=async()=>{
-    if(pinA.length<4){setPinErr("At least 4 digits");return;}
+    if(pinA.length<6){setPinErr("PIN must be 6 digits");return;}
     if(pinA!==pinB){setPinErr("PINs don't match");return;}
     setPinBusy(true);setPinErr("");
     const salt=genSalt();
@@ -689,7 +689,7 @@ function SecuritySettingsSection({authConfig,onSave,compact}){
         <div style={{padding:"12px 0",borderBottom:"1px solid #f8fafc"}}>
           <div style={{fontSize:12,fontWeight:600,color:"#1e293b",marginBottom:8}}>Change PIN</div>
           <div style={{display:"flex",flexDirection:"column",gap:8,maxWidth:320}}>
-            <input type="password" inputMode="numeric" placeholder="New PIN (4-6 digits)" maxLength={6} value={pinA} onChange={e=>setPinA(e.target.value.replace(/\D/g,""))} style={IS2}/>
+            <input type="password" inputMode="numeric" placeholder="New 6-digit PIN" maxLength={6} value={pinA} onChange={e=>setPinA(e.target.value.replace(/\D/g,""))} style={IS2}/>
             <input type="password" inputMode="numeric" placeholder="Confirm new PIN" maxLength={6} value={pinB} onChange={e=>setPinB(e.target.value.replace(/\D/g,""))} style={IS2} onKeyDown={e=>e.key==="Enter"&&savePIN()}/>
             {pinErr&&<div style={{color:"#dc2626",fontSize:11}}>{pinErr}</div>}
             <div style={{display:"flex",gap:8}}>

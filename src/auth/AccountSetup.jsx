@@ -26,12 +26,13 @@ function AccountSetup({onComplete}){
   const [savedSalt,setSavedSalt]=useState(null);
   const [credId,setCredId]=useState(null);
   const [bioMethod,setBioMethod]=useState("webauthn"); // "touchid"|"webauthn"
+  const pinBRef=useRef(null);
 
   const IS={width:"100%",padding:"12px 14px",borderRadius:10,border:"2px solid #e2e8f0",fontSize:15,fontFamily:"inherit",outline:"none",boxSizing:"border-box",textAlign:"center",letterSpacing:6,transition:"border-color .2s"};
 
   // Step 1: create PIN
   const submitPin=async()=>{
-    if(pinA.length<4){setPinErr("PIN must be at least 4 digits");return;}
+    if(pinA.length<6){setPinErr("PIN must be 6 digits");return;}
     if(pinA!==pinB){setPinErr("PINs don't match — try again");return;}
     const salt=genSalt();
     const hash=await hashPin(pinA,salt);
@@ -132,20 +133,19 @@ function AccountSetup({onComplete}){
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <div style={{color:T.tx1,fontSize:15,fontWeight:600,marginBottom:2}}>Create your PIN</div>
             <div style={{color:T.tx3,fontSize:12,marginBottom:6,lineHeight:1.5}}>Your PIN unlocks CashHeap. Stored with PBKDF2 — never visible to us.</div>
-            <input type="password" inputMode="numeric" placeholder="Enter PIN (4–6 digits)" maxLength={6}
-              value={pinA} onChange={e=>setPinA(e.target.value.replace(/\D/g,""))}
+            <input type="password" inputMode="numeric" placeholder="Enter 6-digit PIN" maxLength={6}
+              value={pinA} onChange={e=>{const v=e.target.value.replace(/\D/g,"");setPinA(v);setPinErr("");if(v.length===6)pinBRef.current?.focus();}}
               style={IS}
               onFocus={e=>e.target.style.borderColor=T.accent} onBlur={e=>e.target.style.borderColor=T.border}
             />
-            <input type="password" inputMode="numeric" placeholder="Confirm PIN" maxLength={6}
-              value={pinB} onChange={e=>setPinB(e.target.value.replace(/\D/g,""))}
+            <input ref={pinBRef} type="password" inputMode="numeric" placeholder="Confirm PIN" maxLength={6}
+              value={pinB} onChange={e=>{const v=e.target.value.replace(/\D/g,"");setPinB(v);setPinErr("");if(v.length===6&&pinA===v)submitPin();else if(v.length===6)setPinErr("PINs don't match — try again");}}
               style={IS}
               onFocus={e=>e.target.style.borderColor=T.accent} onBlur={e=>e.target.style.borderColor=T.border}
-              onKeyDown={e=>e.key==="Enter"&&pinA.length>=4&&pinA===pinB&&submitPin()}
             />
             {pinErr&&<div style={{color:T.red,fontSize:12}}>{pinErr}</div>}
-            <button onClick={submitPin} disabled={pinA.length<4||pinB.length<4}
-              style={{marginTop:4,padding:"10px 0",borderRadius:T.r,border:"none",background:pinA.length>=4&&pinB.length>=4?T.accent:T.overlay,color:pinA.length>=4&&pinB.length>=4?"#fff":T.tx3,fontSize:13,fontWeight:500,cursor:pinA.length>=4&&pinB.length>=4?"pointer":"default",fontFamily:"inherit",transition:"background .2s"}}
+            <button onClick={submitPin} disabled={pinA.length<6||pinB.length<6}
+              style={{marginTop:4,padding:"10px 0",borderRadius:T.r,border:"none",background:pinA.length===6&&pinB.length===6?T.accent:T.overlay,color:pinA.length===6&&pinB.length===6?"#fff":T.tx3,fontSize:13,fontWeight:500,cursor:pinA.length===6&&pinB.length===6?"pointer":"default",fontFamily:"inherit",transition:"background .2s"}}
             >Continue →</button>
           </div>
         )}
