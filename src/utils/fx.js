@@ -1,3 +1,5 @@
+import { today } from "./formatters.js";
+
 const fetchUsdCad = (dateStr) => {
   const endpoint = dateStr >= today()
     ? "https://api.frankfurter.app/latest?from=USD&to=CAD"
