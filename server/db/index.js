@@ -1,16 +1,18 @@
-import Database from "better-sqlite3";
+import { createRequire } from "module";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
+const _require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DB_PATH = process.env.SPEND_DB_PATH || join(__dirname, "..", "..", "spend.db");
 
-// Lazy singleton — defers opening the file until the first property access.
-// This prevents better-sqlite3 (not thread-safe) from crashing Next.js build
-// workers that import this module during static analysis.
+// Lazy singleton — defers both the require() and file open until the first
+// property access, so the native better-sqlite3 addon is never dlopen'd
+// during next build (where the architecture may not match).
 let _db = null;
 function getDb() {
   if (!_db) {
+    const Database = _require("better-sqlite3");
     _db = new Database(DB_PATH);
     _db.pragma("journal_mode = WAL");
     _db.pragma("busy_timeout = 5000");
